@@ -1,0 +1,48 @@
+name: Node.js Server CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - dev # Trigger on push to main branch
+    paths:
+      - 'server/**' # Only trigger if changes are made in the server folder
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      # Step 3: Navigate to the server folder
+      - name: Navigate to server folder
+        run: cd server
+
+      # Step 4: Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Step 5: Run tests (if applicable)
+      #- name: Run tests
+       # run: npm test # Add your test script here
+
+      # Step 6: Deploy to EC2
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/backend/server # Replace with your server folder path
+            git pull origin dev
+            npm install --production
+            pm2 restart server # Replace with your PM2 process name
